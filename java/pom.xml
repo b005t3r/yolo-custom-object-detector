@@ -48,12 +48,20 @@
             <version>${dl4j.version}</version>
         </dependency>
 
+<!--
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>opencv</artifactId>
             <version>4.9.0-1.5.10</version>
             <scope>compile</scope>
             <classifier>macosx-x86_64</classifier>
+        </dependency>
+-->
+
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacv-platform</artifactId>
+            <version>1.5.7</version>
         </dependency>
 
         <dependency>
