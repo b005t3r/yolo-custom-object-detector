@@ -6,11 +6,18 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <properties>
+<!--
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
         <dl4j.version>1.0.0-beta</dl4j.version>
+-->
+
+        <maven.compiler.target>12</maven.compiler.target>
+        <maven.compiler.source>12</maven.compiler.source>
+        <dl4j.version>1.0.0-M2.1</dl4j.version>
         <!--<nd4j.backend>nd4j-cuda-8.0</nd4j.backend>-->
         <nd4j.backend>nd4j-native-platform</nd4j.backend>
+        <slf4j.version>2.0.13</slf4j.version>
     </properties>
 
     <dependencies>
@@ -36,8 +43,28 @@
         </dependency>
         <dependency>
             <groupId>org.deeplearning4j</groupId>
-            <artifactId>deeplearning4j-ui_2.10</artifactId>
+<!--            <artifactId>deeplearning4j-ui_2.10</artifactId>-->
+            <artifactId>deeplearning4j-ui</artifactId>
             <version>${dl4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>opencv</artifactId>
+            <version>4.9.0-1.5.10</version>
+            <scope>compile</scope>
+            <classifier>macosx-x86_64</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${slf4j.version}</version>
         </dependency>
     </dependencies>
 </project>

@@ -5,18 +5,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
 import java.util.Random;
-import org.bytedeco.javacpp.opencv_core;
-import static org.bytedeco.javacpp.opencv_core.CV_8U;
-import static org.bytedeco.javacpp.opencv_core.FONT_HERSHEY_DUPLEX;
-import org.bytedeco.javacpp.opencv_core.Mat;
-import org.bytedeco.javacpp.opencv_imgcodecs;
-import static org.bytedeco.javacpp.opencv_imgproc.putText;
-import static org.bytedeco.javacpp.opencv_imgproc.rectangle;
-import static org.bytedeco.javacpp.opencv_imgproc.resize;
+import static org.bytedeco.opencv.global.opencv_imgcodecs.*;
+
 import org.bytedeco.javacv.CanvasFrame;
 import org.bytedeco.javacv.OpenCVFrameConverter;
+import org.bytedeco.opencv.opencv_core.Mat;
 import org.datavec.api.io.filters.RandomPathFilter;
 import org.datavec.api.records.metadata.RecordMetaDataImageURI;
 import org.datavec.api.split.FileSplit;
@@ -24,7 +18,7 @@ import org.datavec.api.split.InputSplit;
 import org.datavec.image.loader.NativeImageLoader;
 import org.datavec.image.recordreader.objdetect.ObjectDetectionRecordReader;
 import org.datavec.image.recordreader.objdetect.impl.VocLabelProvider;
-import org.deeplearning4j.api.storage.StatsStorage;
+import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.ConvolutionMode;
@@ -34,14 +28,12 @@ import org.deeplearning4j.nn.conf.inputs.InputType;
 import org.deeplearning4j.nn.conf.layers.ConvolutionLayer;
 import org.deeplearning4j.nn.conf.layers.objdetect.Yolo2OutputLayer;
 import org.deeplearning4j.nn.graph.ComputationGraph;
-import org.deeplearning4j.nn.layers.objdetect.DetectedObject;
 import org.deeplearning4j.nn.transferlearning.FineTuneConfiguration;
 import org.deeplearning4j.nn.transferlearning.TransferLearning;
 import org.deeplearning4j.nn.weights.WeightInit;
-import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.deeplearning4j.ui.api.UIServer;
-import org.deeplearning4j.ui.stats.StatsListener;
-import org.deeplearning4j.ui.storage.InMemoryStatsStorage;
+import org.deeplearning4j.ui.model.stats.StatsListener;
+import org.deeplearning4j.ui.model.storage.InMemoryStatsStorage;
 import org.deeplearning4j.util.ModelSerializer;
 import org.deeplearning4j.zoo.model.TinyYOLO;
 import org.nd4j.linalg.activations.Activation;
@@ -50,9 +42,7 @@ import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.learning.config.RmsProp;
-import org.nd4j.linalg.learning.config.Sgd;
-import org.nd4j.linalg.lossfunctions.impl.LossMCXENT;
-import org.nd4j.linalg.lossfunctions.impl.LossMSE;
+import org.nd4j.linalg.profiler.ProfilerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,15 +65,15 @@ public class YoloTrainer {
     private static final int GRID_HEIGHT = 13;
     private static final int CLASSES_NUMBER = 1;
     private static final int BOXES_NUMBER = 5;
-    private static final double[][] PRIOR_BOXES = {{1.5, 1.5}, {2, 2}, {3, 3}, {3.5, 8}, {4, 9}};
+    private static final double[][] PRIOR_BOXES = {{2, 5}, {2.5, 6}, {3, 7}, {3.5, 8}, {4, 9}}; // {{1.5, 1.5}, {2, 2}, {3, 3}, {3.5, 8}, {4, 9}};
 
-    private static final int BATCH_SIZE = 4;
-    private static final int EPOCHS = 50;
+    private static final int BATCH_SIZE = 10;
+    private static final int EPOCHS = 15; // 50;
     private static final double LEARNIGN_RATE = 0.0001;
     private static final int SEED = 7854;
 
     /*parent Dataset folder "DATA_DIR" contains two subfolder "images" and "annotations" */
-    private static final String DATA_DIR = "C:\\Users\\Emaraic\\Documents\\Dataset";
+    private static final String DATA_DIR = "Dataset";
 
     /* Yolo loss function prameters for more info
     https://stats.stackexchange.com/questions/287486/yolo-loss-function-explanation*/
@@ -91,6 +81,14 @@ public class YoloTrainer {
     private static final double LAMDBA_NO_OBJECT = 0.5;
 
     public static void main(String[] args) throws IOException, InterruptedException {
+/*
+        Nd4j.getExecutioner().setProfilingConfig(ProfilerConfig.builder()
+                .checkForINF(true)
+                .checkElapsedTime(true)
+                .checkLocality(true)
+                .checkWorkspaces(true)
+                .build());
+*/
 
         Random rng = new Random(SEED);
 
@@ -138,36 +136,40 @@ public class YoloTrainer {
         RecordReaderDataSetIterator test = new RecordReaderDataSetIterator(recordReaderTest, 1, 1, 1, true);
         test.setPreProcessor(new ImagePreProcessingScaler(0, 1));
 
-        ComputationGraph pretrained = (ComputationGraph) TinyYOLO.builder().build().initPretrained();
-
+        ComputationGraph pretrained = (ComputationGraph)TinyYOLO.builder().build().initPretrained();
         INDArray priors = Nd4j.create(PRIOR_BOXES);
+
         FineTuneConfiguration fineTuneConf = new FineTuneConfiguration.Builder()
                 .seed(SEED)
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
                 .gradientNormalization(GradientNormalization.RenormalizeL2PerLayer)
                 .gradientNormalizationThreshold(1.0)
-                .updater(new RmsProp(LEARNIGN_RATE))
-                .activation(Activation.IDENTITY).miniBatch(true)
+                .updater(new Adam.Builder().learningRate(LEARNIGN_RATE).build())
+                //.updater(new Nesterovs.Builder().learningRate(learningRate).momentum(lrMomentum).build())
+                .l2(0.00001)
+                .activation(Activation.IDENTITY)
                 .trainingWorkspaceMode(WorkspaceMode.ENABLED)
+                .inferenceWorkspaceMode(WorkspaceMode.ENABLED)
                 .build();
 
         ComputationGraph model = new TransferLearning.GraphBuilder(pretrained)
                 .fineTuneConfiguration(fineTuneConf)
                 .setInputTypes(InputType.convolutional(INPUT_HEIGHT, INPUT_WIDTH, CHANNELS))
                 .removeVertexKeepConnections("conv2d_9")
+                .removeVertexKeepConnections("outputs")
                 .addLayer("convolution2d_9",
                         new ConvolutionLayer.Builder(1, 1)
                                 .nIn(1024)
                                 .nOut(BOXES_NUMBER * (5 + CLASSES_NUMBER))
                                 .stride(1, 1)
                                 .convolutionMode(ConvolutionMode.Same)
-                                .weightInit(WeightInit.UNIFORM)
-                                .hasBias(false)
+                                .weightInit(WeightInit.XAVIER /*WeightInit.UNIFORM*/)
+                                //.hasBias(false)
                                 .activation(Activation.IDENTITY)
                                 .build(), "leaky_re_lu_8")
                 .addLayer("outputs",
                         new Yolo2OutputLayer.Builder()
-                                .lambbaNoObj(LAMDBA_NO_OBJECT)
+                                .lambdaNoObj(LAMDBA_NO_OBJECT)
                                 .lambdaCoord(LAMDBA_COORD)
                                 .boundingBoxPriors(priors)
                                 .build(), "convolution2d_9")
@@ -190,7 +192,7 @@ public class YoloTrainer {
         log.info("*** Saving Model ***");
         ModelSerializer.writeModel(model, "model.data", true);
         log.info("*** Training Done ***");
-        
+
         
         //visualize results on the test set, Just hit any key in your keyboard to iterate the test set.
         log.info("*** Visualizing model on test data ***");
@@ -206,9 +208,10 @@ public class YoloTrainer {
         while (test.hasNext() && mainframe.isVisible()) {
             org.nd4j.linalg.dataset.DataSet ds = test.next();
             RecordMetaDataImageURI metadata = (RecordMetaDataImageURI) ds.getExampleMetaData().get(0);
-            Mat image = opencv_imgcodecs.imread(metadata.getURI().getPath().substring(1));
+            Mat image = imread(metadata.getURI().getPath());
             //System.out.println("Path: " +metadata.getURI().getPath());
-            detector.detectRubixCube(ds.getFeatures(),image, 0.4);
+            detector.detectRubixCube(ds.getFeatures(), image, 0.4);
+            //detector.detectRubixCube(image, 0.1);
             mainframe.setTitle(new File(metadata.getURI()).getName());
             mainframe.showImage(converter.convert(image));
             mainframe.waitKey();
