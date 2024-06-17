@@ -70,7 +70,7 @@ public class YoloTrainer {
     private static final int GRID_HEIGHT = 13;
     private static final int CLASSES_NUMBER = 1;
     private static final int BOXES_NUMBER = 5;
-    private static final double[][] PRIOR_BOXES = {{2, 2}, {2, 2}, {2, 2}, {2, 2}, {2, 2}}; // {{1.5, 1.5}, {2, 2}, {3, 3}, {3.5, 8}, {4, 9}};
+    private static final double[][] PRIOR_BOXES = {{1.5, 1.5}, {2, 2}, {3, 3}, {3.5, 8}, {4, 9}};
 
     private static final int BATCH_SIZE = 4;
     private static final int EPOCHS = 5; // 50;
@@ -142,11 +142,14 @@ public class YoloTrainer {
                     GRID_HEIGHT, GRID_WIDTH, new VocLabelProvider(DATA_DIR));
             recordReaderTest.initialize(testData);
 
+            ImagePreProcessingScaler scaler = new ImagePreProcessingScaler(0, 1, 8);
+            //scaler.fitLabel(true);
+
             RecordReaderDataSetIterator train = new RecordReaderDataSetIterator(recordReaderTrain, BATCH_SIZE, 1, 1, true);
-            train.setPreProcessor(new ImagePreProcessingScaler(0, 1));
+            train.setPreProcessor(scaler);
 
             RecordReaderDataSetIterator test = new RecordReaderDataSetIterator(recordReaderTest, 1, 1, 1, true);
-            test.setPreProcessor(new ImagePreProcessingScaler(0, 1));
+            test.setPreProcessor(scaler);
 
         ComputationGraph pretrained = (ComputationGraph) TinyYOLO.builder().build().initPretrained();
         INDArray priors = Nd4j.create(PRIOR_BOXES);
@@ -193,24 +196,24 @@ public class YoloTrainer {
             log.info("Train model...");
             model.setListeners(new ScoreIterationListener(1));//print score after each iteration on stout
             //model.setListeners(new StatsListener(statsStorage));// visit http://localhost:9000 to track the training process
-/*
             for (int i = 0; i < EPOCHS; i++) {
                 train.reset();
                 while (train.hasNext()) {
                     DataSet ds = train.next();
 
+/*
                     if (ds.toString().contains("NaN")) {
                         System.err.println("NaN present");
 
                         System.out.println(ds);
                     }
+*/
 
                     model.fit(ds);
                 }
                 log.info("*** Completed epoch {} ***", i);
             }
-*/
-            model.fit(train, EPOCHS);
+            //model.fit(train, EPOCHS);
 
             log.info("*** Saving Model ***");
             ModelSerializer.writeModel(model, "model.data", true);

@@ -78,6 +78,13 @@ public class TinyYoloHouseNumberDetection {
     public static final Scalar VIOLET = RGB(238.0, 130.0, 238.0);
 
     public static void main(String[] args) throws java.lang.Exception {
+        Nd4j.getExecutioner().setProfilingConfig(ProfilerConfig.builder()
+                .checkForINF(true)
+                .checkForNAN(true)
+                .checkElapsedTime(true)
+                .checkLocality(true)
+                .checkWorkspaces(true)
+                .build());
 
         // parameters matching the pretrained TinyYOLO model
         int width = 416;
@@ -98,7 +105,7 @@ public class TinyYoloHouseNumberDetection {
 
         // parameters for the training phase
         int batchSize = 10;
-        int nEpochs = 20;
+        int nEpochs = 3; // 20;
         double learningRate = 1e-4;
 
         int seed = 123;
@@ -203,10 +210,12 @@ public class TinyYoloHouseNumberDetection {
                 while (train.hasNext()) {
                     DataSet ds = train.next();
 
+/*
                     if(ds.toString().contains("NaN")) {
                         System.err.println("NaN values found");
                         System.err.println(ds);
                     }
+*/
 
                     model.fit(ds);
                 }
