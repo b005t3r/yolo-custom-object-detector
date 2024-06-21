@@ -94,7 +94,7 @@ public class YoloTrainer {
 
             Nd4j.getExecutioner().setProfilingConfig(ProfilerConfig.builder()
                     .checkForINF(true)
-                    .checkForNAN(true)
+                    //.checkForNAN(true)
                     .checkElapsedTime(true)
                     .checkLocality(true)
                     .checkWorkspaces(true)
@@ -175,7 +175,7 @@ public class YoloTrainer {
                                 .nIn(1024)
                                 .nOut(BOXES_NUMBER * (5 + CLASSES_NUMBER))
                                 .stride(1,1)
-                                .convolutionMode(ConvolutionMode.Same)
+                                .convolutionMode(ConvolutionMode.Strict/*ConvolutionMode.Same*/)
                                 .weightInit(WeightInit.UNIFORM)
                                 .hasBias(false)
                                 .activation(Activation.IDENTITY)
@@ -193,6 +193,7 @@ public class YoloTrainer {
 
         System.out.println(model.summary(InputType.convolutional(INPUT_HEIGHT, INPUT_WIDTH, CHANNELS)));
 
+/*
             log.info("Train model...");
             model.setListeners(new ScoreIterationListener(1));//print score after each iteration on stout
             //model.setListeners(new StatsListener(statsStorage));// visit http://localhost:9000 to track the training process
@@ -200,14 +201,6 @@ public class YoloTrainer {
                 train.reset();
                 while (train.hasNext()) {
                     DataSet ds = train.next();
-
-/*
-                    if (ds.toString().contains("NaN")) {
-                        System.err.println("NaN present");
-
-                        System.out.println(ds);
-                    }
-*/
 
                     model.fit(ds);
                 }
@@ -218,6 +211,7 @@ public class YoloTrainer {
             log.info("*** Saving Model ***");
             ModelSerializer.writeModel(model, "model.data", true);
             log.info("*** Training Done ***");
+*/
 
 
             //visualize results on the test set, Just hit any key in your keyboard to iterate the test set.
