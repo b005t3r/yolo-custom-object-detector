@@ -14,8 +14,8 @@
 
         <maven.compiler.target>12</maven.compiler.target>
         <maven.compiler.source>12</maven.compiler.source>
-<!--        <dl4j.version>1.0.0-M2.1</dl4j.version>-->
-        <dl4j.version>1.0.0-beta7</dl4j.version>
+        <dl4j.version>1.0.0-M2.1</dl4j.version>
+<!--        <dl4j.version>1.0.0-beta7</dl4j.version>-->
         <!--<nd4j.backend>nd4j-cuda-8.0</nd4j.backend>-->
         <nd4j.backend>nd4j-native-platform</nd4j.backend>
         <slf4j.version>2.0.13</slf4j.version>
@@ -62,8 +62,20 @@
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>javacv-platform</artifactId>
-            <version>1.5.3</version>
+            <version>1.5.7</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.nd4j</groupId>
+            <artifactId>nd4j-onnxruntime</artifactId>
+            <version>${dl4j.version}</version>
+        </dependency>
+
+<!--        <dependency>-->
+<!--            <groupId>com.microsoft.onnxruntime</groupId>-->
+<!--            <artifactId>onnxruntime</artifactId>-->
+<!--            <version>1.18.0</version>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>org.slf4j</groupId>
